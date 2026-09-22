@@ -1,6 +1,6 @@
 # Noon Worksheets
 
-Arabic math worksheets and answer banks for Grades 9–12. Each grade page provides HTML and PDF copies of Worksheet 1 questions and answers.
+Arabic math worksheets and answer banks for Grades 9–12. Each grade page links to the HTML questions and answer bank for Worksheet 1. PDF files are retained in the repository but are not linked from the website.
 
 Published with GitHub Pages at https://abdulrahman-albeladi.github.io/noon-worksheets/ .
 

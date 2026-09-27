@@ -1,0 +1,54 @@
+name: Assemble Grade 9 science worksheet
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.science-pdf-parts/**'
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble PDF
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import glob, hashlib, lzma
+          parts = sorted(glob.glob(".science-pdf-parts/part-*"))
+          if not parts:
+              raise SystemExit("No PDF parts found")
+          s = "".join(Path(p).read_text(encoding="utf-8").strip() for p in parts)
+          buf = 0
+          bits = 0
+          out = bytearray()
+          for ch in s:
+              v = ord(ch) - 0x4E00
+              if not 0 <= v < 16384:
+                  raise ValueError("Invalid transfer character")
+              buf = (buf << 14) | v
+              bits += 14
+              while bits >= 8:
+                  bits -= 8
+                  out.append((buf >> bits) & 0xFF)
+                  buf &= (1 << bits) - 1 if bits else 0
+          compressed = bytes(out[:1182012])
+          pdf = lzma.decompress(compressed)
+          expected = "243304b6ea6e12f91f4dcd08adebb549f30b6c4c2c5021486ee9398f01d619cf"
+          got = hashlib.sha256(pdf).hexdigest()
+          if got != expected:
+              raise SystemExit(f"SHA256 mismatch: {got}")
+          dest = Path("grade-9/science/worksheet-1.pdf")
+          dest.parent.mkdir(parents=True, exist_ok=True)
+          dest.write_bytes(pdf)
+          print(f"Wrote {dest} ({len(pdf)} bytes)")
+          PY
+          rm -rf .science-pdf-parts
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Add Grade 9 science worksheet PDF"
+          git push
